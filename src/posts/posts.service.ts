@@ -61,22 +61,22 @@ export class PostsService {
     
 
   async deletePost(userId: number, postId: number): Promise<Post> {
-    try {
-      this.logger.log(`Deleting postId: ${postId} for userId: ${userId}`);
-      const existingPost = await this.prisma.post.findUnique({ where: { id: postId } });
-      if (!existingPost) {
-        throw new NotFoundException('Post not found');
-      }
-      if (existingPost.userId !== userId) {
-        throw new ForbiddenException('You do not have permission to delete this post');
-      }
-      return await this.prisma.post.delete({ where: { id: postId } });
-    } catch (error) {
-      this.logger.error('Error deleting post', error.stack);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Failed to delete post');
+    console.log(`🔍 Checking post ownership: postId = ${postId}, userId = ${userId}`);
+  
+    const existingPost = await this.prisma.post.findUnique({ where: { id: postId } });
+  
+    if (!existingPost) {
+      console.log('❌ Post not found');
+      throw new NotFoundException('Post not found');
     }
+  
+    if (existingPost.userId !== userId) {
+      console.log('⛔ Forbidden: User does not own this post');
+      throw new ForbiddenException('You do not have permission to delete this post');
+    }
+  
+    console.log('✅ Post found, deleting...');
+    return await this.prisma.post.delete({ where: { id: postId } });
   }
+  
 }
