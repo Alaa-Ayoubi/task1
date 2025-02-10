@@ -64,16 +64,16 @@ export class PostsController {
           
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async deletePost(@GetUser() user: User, @Param('id') postId: number) {
-    if (!user?.id) {
+  async deletePost(
+    @GetUser('userId') userId: number,  // ✅ استخراج userId فقط
+    @Param('id', ParseIntPipe) postId: number,
+  ) {
+    console.log(`🔥 Deleting post with postId: ${postId}, userId: ${userId}`);
+  
+    if (!userId) {
       throw new UnauthorizedException('User not found');
     }
-
-    try {
-      return await this.postsService.deletePost(user.id, postId);
-    } catch (error) {
-      this.logger.error('Failed to delete post', error.stack);
-      throw error;
-    }
+  
+    return this.postsService.deletePost(userId, postId);
   }
-}
+  }
