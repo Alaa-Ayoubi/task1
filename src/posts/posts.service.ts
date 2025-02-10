@@ -35,35 +35,29 @@ export class PostsService {
   }
 
   async updatePost(postId: number, title: string, content: string, userId: number): Promise<Post> {
-    try {
-      this.logger.log(`Updating postId: ${postId}, title: ${title}, content: ${content}`);
+    console.log(`🔥 Service: updatePost called with postId: ${postId}, userId: ${userId}, title: ${title}, content: ${content}`);
   
-      // ✅ البحث عن البوست والتحقق من مالكه
-      const existingPost = await this.prisma.post.findUnique({
-        where: { id: Number(postId) },
-      });
+    const existingPost = await this.prisma.post.findUnique({
+      where: {id: Number(postId) },
+    });
   
-      if (!existingPost) {
-        throw new NotFoundException('Post not found');
-      }
-  
-      if (existingPost.userId !== userId) {  
-        throw new ForbiddenException('You do not have permission to edit this post');
-      }
-  
-      // ✅ تحديث البوست
-      return await this.prisma.post.update({
-        where: { id: Number(postId) },
-        data: { title, content },
-      });
-    } catch (error) {
-      this.logger.error('Error updating post', error.stack);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Failed to update post');
+    if (!existingPost) {
+      console.log('❌ Post not found');
+      throw new NotFoundException('Post not found');
     }
+  
+    if (existingPost.userId !== userId) {  
+      console.log('⛔ Forbidden: User does not own this post');
+      throw new ForbiddenException('You do not have permission to edit this post');
+    }
+  
+    console.log('✅ Post found, updating...');
+    return await this.prisma.post.update({
+      where: { id: Number(postId) },
+      data: { title, content },
+    });
   }
+  
     
 
   async deletePost(userId: number, postId: number): Promise<Post> {

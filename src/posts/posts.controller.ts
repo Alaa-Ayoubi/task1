@@ -46,17 +46,20 @@ export class PostsController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   async updatePost(
-    @Param('id') postId: number,
+    @Param('id', ParseIntPipe) postId: number,
     @Body() body: { title: string; content: string },
-    @GetUser() user: User,
-  ) {
-    console.log('✅ Extracted User from JWT:', user);
+    @GetUser('userId') userId: number, ) {
+    console.log(`🔥 Calling updatePost with postId: ${postId}, userId: ${userId}, title: ${body.title}, content: ${body.content}`);
+    console.log('🟢 User in Controller:', userId); // 🔥 إضافة تسجيل للتأكد من استقباله
+    console.log('🟢 Post ID:', postId);
+ 
   
-    if (!user || !user.id) {
+
+    if (!userId) {
       throw new UnauthorizedException('User ID missing in extracted user');
     }
   
-    return this.postsService.updatePost(postId, body.title, body.content, user.id);
+    return this.postsService.updatePost(postId, body.title, body.content, userId);
   }
           
   @Delete(':id')
