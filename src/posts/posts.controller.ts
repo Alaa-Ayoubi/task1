@@ -6,74 +6,67 @@ import {
   Param,
   Delete,
   UseGuards,
-  InternalServerErrorException,
   HttpCode,
   HttpStatus,
   BadRequestException,
   Logger,
   UnauthorizedException,
   Post,
-  Req,
   ParseIntPipe,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth/jwt-auth.guard';
-import { VerifiedGuard } from '../auth/guards/jwt-auth/Verified.Guard';
 import { GetUser } from '../auth/decorators/get-user.decorator/get-user.decorator';
-import { User, Post as PrismaPost } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('posts')
 export class PostsController {
   private readonly logger = new Logger(PostsController.name);
-  constructor(private postsService: PostsService, private prisma: PrismaService) {}
 
-  @UseGuards(JwtAuthGuard)
+  constructor(private postsService: PostsService) {}
+
+  // 📝 إنشاء منشور جديد
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createPost(@Req() req, @Body() body) {
-    console.log('User from token:', req.user); // تحقق من بيانات المستخدم
-    const user = await this.prisma.user.findUnique({ where: { id: req.user.userId } });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+  async createPost(
+    @GetUser('userId') userId: number, 
+    @Body() body: { title: string; content: string },
+  ) {
+    this.logger.log(`Creating post for userId: ${userId}`);
+    
+    if (!body.title || !body.content) {
+      throw new BadRequestException('Title and content cannot be empty');
     }
 
-    return this.postsService.createPost(req.user.userId, body.title, body.content);
+    return this.postsService.createPost(userId, body.title, body.content);
   }
 
+  // ✏️ تحديث منشور موجود
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   async updatePost(
     @Param('id', ParseIntPipe) postId: number,
     @Body() body: { title: string; content: string },
-    @GetUser('userId') userId: number, ) {
-    console.log(`🔥 Calling updatePost with postId: ${postId}, userId: ${userId}, title: ${body.title}, content: ${body.content}`);
-    console.log('🟢 User in Controller:', userId); // 🔥 إضافة تسجيل للتأكد من استقباله
-    console.log('🟢 Post ID:', postId);
- 
-  
+    @GetUser('userId') userId: number,
+  ) {
+    this.logger.log(`Updating postId: ${postId} for userId: ${userId}`);
 
-    if (!userId) {
-      throw new UnauthorizedException('User ID missing in extracted user');
+    if (!body.title || !body.content) {
+      throw new BadRequestException('Title and content cannot be empty');
     }
-  
+
     return this.postsService.updatePost(postId, body.title, body.content, userId);
   }
-          
+
+  // 🗑️ حذف منشور
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   async deletePost(
-    @GetUser('userId') userId: number,  // ✅ استخراج userId فقط
+    @GetUser('userId') userId: number,
     @Param('id', ParseIntPipe) postId: number,
   ) {
-    console.log(`🔥 Deleting post with postId: ${postId}, userId: ${userId}`);
-  
-    if (!userId) {
-      throw new UnauthorizedException('User not found');
-    }
-  
+    this.logger.log(`Deleting postId: ${postId} for userId: ${userId}`);
+
     return this.postsService.deletePost(userId, postId);
   }
-  }
+}
