@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, NotFoundException, ForbiddenException, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Post } from '@prisma/client';
 
@@ -8,7 +8,7 @@ export class PostsService {
 
   constructor(private prisma: PrismaService) {}
 
-  async getAllPostsForUser(userId: number): Promise<Post[]> {
+  async getAllPostsForUser(userId: string): Promise<Post[]> {
     try {
       this.logger.log(`Fetching posts for userId: ${userId}`);
       return await this.prisma.post.findMany({ where: { userId } });
@@ -18,16 +18,12 @@ export class PostsService {
     }
   }
 
-  async createPost(userId: number, title: string, content: string): Promise<Post> {
+  async createPost(userId: string, title: string, content: string): Promise<Post> {
     try {
-      if (!title || !content) {
-        throw new BadRequestException('Title and content cannot be empty');
-      }
-
-      this.logger.log(`Creating post for userId: ${userId}`);
+      this.logger.log(`Creating post for userId: ${userId}, title: ${title}, content: ${content}`);
       return await this.prisma.post.create({
         data: {
-          userId,
+          userId, 
           title,
           content,
         },
@@ -38,7 +34,7 @@ export class PostsService {
     }
   }
 
-  async updatePost(postId: number, title: string, content: string, userId: number): Promise<Post> {
+  async updatePost(postId: string, title: string, content: string, userId: string): Promise<Post> {
     try {
       this.logger.log(`Updating postId: ${postId} for userId: ${userId}`);
 
@@ -64,7 +60,7 @@ export class PostsService {
     }
   }
 
-  async deletePost(userId: number, postId: number): Promise<Post> {
+  async deletePost(userId: string, postId: string): Promise<Post> {
     try {
       this.logger.log(`Attempting to delete postId: ${postId} for userId: ${userId}`);
 

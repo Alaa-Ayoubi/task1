@@ -10,23 +10,27 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: config.get<string>('JWT_SECRET'),
+      secretOrKey: config.get<string>('JWT_SECRET') || 'default_secret', 
     });
   }
-  async validate(payload: { userId: number }) {
-    console.log('✅ Decoded JWT Payload:', payload); // تحقق من أن `userId` موجود
-  
+
+  async validate(payload: { userId: string }) {
+    console.log('✅ Decoded JWT Payload:', payload);
+
+    if (!payload.userId) {
+      throw new UnauthorizedException('Invalid JWT token: Missing userId');
+    }
+
     const user = await this.prisma.user.findUnique({
-      where: { id: payload.userId }, // تأكد أن `userId` رقم وليس نص
+      where: { id: payload.userId }, 
     });
-  
-    console.log('✅ User found in DB:', user); // تحقق من أن المستخدم موجود في قاعدة البيانات
-  
+
+    console.log('✅ User found in DB:', user);
+
     if (!user) {
       throw new UnauthorizedException('User not found in database');
     }
-  
+
     return user;
   }
-    
 }

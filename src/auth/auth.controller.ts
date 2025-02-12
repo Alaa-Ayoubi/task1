@@ -34,10 +34,13 @@ export class AuthController {
   }
 
   @Post('forgot-password')
-  @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body(ValidationPipe) passwordDto: PasswordDto): Promise<{ message: string }> {
-    await this.authService.forgotPassword(passwordDto.email);
-    return { message: 'If the email exists, a password reset link has been sent.' };
+  async forgotPassword(@Body('email') email: string) {
+    return this.authService.forgotPassword(email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() body: { token: string; newPassword: string }) {
+    return this.authService.resetPassword(body.token, body.newPassword);
   }
 
   @Get('verify')

@@ -10,9 +10,7 @@ import {
   HttpStatus,
   BadRequestException,
   Logger,
-  UnauthorizedException,
   Post,
-  ParseIntPipe,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth/jwt-auth.guard';
@@ -25,11 +23,10 @@ export class PostsController {
 
   constructor(private postsService: PostsService) {}
 
-  // 📝 إنشاء منشور جديد
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createPost(
-    @GetUser('userId') userId: number, 
+    @GetUser('userId') userId: string, 
     @Body() body: { title: string; content: string },
   ) {
     this.logger.log(`Creating post for userId: ${userId}`);
@@ -41,13 +38,12 @@ export class PostsController {
     return this.postsService.createPost(userId, body.title, body.content);
   }
 
-  // ✏️ تحديث منشور موجود
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   async updatePost(
-    @Param('id', ParseIntPipe) postId: number,
+    @Param('id') postId: string, 
     @Body() body: { title: string; content: string },
-    @GetUser('userId') userId: number,
+    @GetUser('userId') userId: string, 
   ) {
     this.logger.log(`Updating postId: ${postId} for userId: ${userId}`);
 
@@ -58,12 +54,11 @@ export class PostsController {
     return this.postsService.updatePost(postId, body.title, body.content, userId);
   }
 
-  // 🗑️ حذف منشور
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   async deletePost(
-    @GetUser('userId') userId: number,
-    @Param('id', ParseIntPipe) postId: number,
+    @GetUser('userId') userId: string, 
+    @Param('id') postId: string, 
   ) {
     this.logger.log(`Deleting postId: ${postId} for userId: ${userId}`);
 

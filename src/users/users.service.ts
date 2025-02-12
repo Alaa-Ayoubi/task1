@@ -1,4 +1,3 @@
-// users.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -10,7 +9,7 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
-  async findById(id: number) {
+  async findById(id: string) { 
     return this.prisma.user.findUnique({ where: { id } });
   }
 }

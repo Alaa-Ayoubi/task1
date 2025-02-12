@@ -4,9 +4,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
 import { access } from 'fs';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
+  mailService: any;
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -64,16 +66,41 @@ export class AuthService {
     return { accessToken };
   }
 
-    async forgotPassword(email: string): Promise<any> {
+  async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new NotFoundException('User not found');
     }
 
-    const resetToken = this.generateToken({ email }, '1h');
-    console.log(`Reset token for user ${email}: ${resetToken}`);
+    const resetToken = randomBytes(32).toString('hex');
+    const tokenExpiration = new Date(Date.now() + Number(process.env.RESET_PASSWORD_EXPIRATION));
 
-    return { message: 'Reset token generated. Check console output.' };
+    await this.prisma.user.update({
+      where: { email },
+      data: { resetToken, resetTokenExpires: tokenExpiration },
+    });
+
+    await this.mailService.sendResetPasswordEmail(email, resetToken);
+    return { message: 'Password reset email sent' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { resetToken: token, resetTokenExpires: { gte: new Date() } },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Invalid or expired token');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword, resetToken: null, resetTokenExpires: null },
+    });
+
+    return { message: 'Password reset successful' };
   }
 
   async verifyAccount(token: string): Promise<void> {
@@ -82,12 +109,10 @@ export class AuthService {
   
       console.log('Decoded token:', decoded);
   
-      // ✅ التأكد من أن التوكن يحتوي على email وليس id
       if (!decoded.email) {
         throw new BadRequestException('Invalid token: email is missing');
       }
   
-      // ✅ البحث عن المستخدم باستخدام البريد الإلكتروني
       const user = await this.prisma.user.findUnique({
         where: { email: decoded.email }, 
       });
@@ -101,7 +126,6 @@ export class AuthService {
         return;
       }
   
-      // ✅ تحديث حالة التحقق
       await this.prisma.user.update({
         where: { email: user.email },
         data: { isVerified: true },
@@ -120,3 +144,4 @@ export class AuthService {
     return this.jwtService.sign(payload, { expiresIn });
   }
 }
+
