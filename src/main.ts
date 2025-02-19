@@ -6,19 +6,19 @@ import { HttpExceptionFilter } from './common/filters/http-exception/http-except
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule);
 
-  app.useGlobalInterceptors(new LoggingInterceptor());
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-    }),
-  );
+    app.useGlobalInterceptors(new LoggingInterceptor());
+    app.useGlobalPipes(
+        new ValidationPipe({
+            transform: true,
+            whitelist: true,
+        }),
+    );
 
-  app.useGlobalFilters(new HttpExceptionFilter());
+    app.useGlobalFilters(new HttpExceptionFilter());
 
-  await app.listen(3000);
-  console.log(`Application is running on: ${await app.getUrl()}`);
+    await app.listen(3000);
+    console.log(`Application is running on: ${await app.getUrl()}`);
 }
 void bootstrap();
